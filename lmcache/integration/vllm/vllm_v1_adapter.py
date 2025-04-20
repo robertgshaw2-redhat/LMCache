@@ -341,10 +341,13 @@ class LMCacheConnectorV1Impl:
         self._lmcache_chunk_size = 256
 
     def is_request_done_receiving(self, request: "Request") -> bool:
+        # NOTE(rob): this is extremely brittle and will cause
+        # issues where this never returns true (causing deadlock)
+        # if e.g. we evict RECVObjPool before lookup.
         num_external_hit_tokens = self.lookup_client.lookup(
             torch.tensor(request.prompt_token_ids))
         if num_external_hit_tokens > 0:
-            logger.info(f"{num_external_hit_tokens=}")
+            logger.debug(f"{num_external_hit_tokens=}")
         return num_external_hit_tokens == len(request.prompt_token_ids)
 
     def _init_kv_caches_from_forward_context(
