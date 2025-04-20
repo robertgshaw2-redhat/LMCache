@@ -614,7 +614,8 @@ class LMCacheConnectorV1Impl:
             self._request_trackers.pop(finished_req_id, None)
 
         for request in scheduler_output.scheduled_new_reqs:
-            # Right now, we only load KV for new requests
+            # NOTE(rob): all new reqs are added to tracker for both
+            # producer and consumer side.
             load_spec = self.load_specs.pop(request.req_id, None)
             num_tokens_to_compute = request.num_computed_tokens + \
                     scheduler_output.num_scheduled_tokens[request.req_id]
@@ -622,10 +623,10 @@ class LMCacheConnectorV1Impl:
                 request, num_tokens_to_compute)
             self._request_trackers[request.req_id] = request_tracker
 
-            # SKIP saving until explicitly asked to.
+            # NOTE(rob): scheduled new reqs need to be loaded on
+            # the consumer side only.
             if self.kv_role == "kv_producer":
                 continue
-
             req_meta = ReqMeta.from_request_tracker(
                 request_tracker,
                 self._block_size,
@@ -636,6 +637,7 @@ class LMCacheConnectorV1Impl:
             if req_meta is not None:
                 meta.add_request(req_meta)
 
+        # NOTE(rob): producer side sends the KVs.
         for request_id in scheduler_output.new_KV_req_ids_to_send:
             assert self.kv_role == "kv_producer"
             request_tracker = self._request_trackers[request_id]
@@ -649,8 +651,6 @@ class LMCacheConnectorV1Impl:
                 discard_partial_chunks=self._discard_partial_chunks)
             if req_meta is not None:
                 meta.add_request(req_meta)
-
-
 
         # NOTE(rob): this is not needed since:
         #   - a) we do not need to chunking (we send the KVs)
