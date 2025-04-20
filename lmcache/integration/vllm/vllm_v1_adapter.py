@@ -600,7 +600,20 @@ class LMCacheConnectorV1Impl:
         for finished_req_id in scheduler_output.finished_req_ids:
             self._request_trackers.pop(finished_req_id, None)
 
-        for request in scheduler_output.new_KV_requests_to_send:
+        for request_id in scheduler_output.new_KV_requests_to_send:
+            assert self.kv_role == "kv_producer"
+            request_tracker = self._request_trackers[request_id]
+            req_meta = ReqMeta.from_request_tracker(
+                request_tracker,
+                self._block_size,
+                self._lmcache_chunk_size,
+                load_spec=None,
+                skip_save=False,
+                discard_partial_chunks=self._discard_partial_chunks)
+            if req_meta is not None:
+                meta.add_request(req_meta)            
+
+        for request in scheduler_output.scheduled_new_reqs:
             # Right now, we only load KV for new requests
             load_spec = self.load_specs.pop(request.req_id, None)
             num_tokens_to_compute = request.num_computed_tokens + \
@@ -608,6 +621,10 @@ class LMCacheConnectorV1Impl:
             request_tracker = RequestTracker.from_new_request(
                 request, num_tokens_to_compute)
             self._request_trackers[request.req_id] = request_tracker
+
+            # SKIP saving until explicitly asked to.
+            if self.kv_role == "kv_producer":
+                continue
 
             req_meta = ReqMeta.from_request_tracker(
                 request_tracker,
