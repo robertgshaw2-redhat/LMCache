@@ -338,6 +338,13 @@ class LMCacheConnectorV1Impl:
         # TODO: need to align this chunk size with lmcache
         self._lmcache_chunk_size = 256
 
+    def is_request_done_receiving(self, request: "Request") -> bool:
+        num_external_hit_tokens = self.lookup_client.lookup(
+            torch.tensor(request.prompt_token_ids))
+        if num_external_hit_tokens > 0:
+            logger.info(f"{num_external_hit_tokens=}")
+        return num_external_hit_tokens == len(request.prompt_token_ids)
+
     def _init_kv_caches_from_forward_context(
             self, forward_context: "ForwardContext"):
         for layer_name in forward_context.no_compile_layers:
