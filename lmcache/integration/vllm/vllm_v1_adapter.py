@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
 import threading
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Optional
@@ -388,7 +389,7 @@ class LMCacheConnectorV1Impl:
         if attn_metadata is None:
             logger.warning(
                 "In connector.start_load_kv, but the attn_metadata is None")
-            return
+            # return
 
         # HACK: getting chunk size to correctly calculate retrieve mask
         assert self.lmcache_engine is not None
@@ -457,6 +458,11 @@ class LMCacheConnectorV1Impl:
         if self.kv_role == "kv_consumer":
             # Don't do save if the role is kv_consumer
             return
+        
+        if os.getenv["DEBUG_DELAY_SAVE"] == "1":
+            import time
+            logger.info("Sleeping to show that the worker is blocked.")
+            time.sleep(2.)
 
         connector_metadata = self._parent._get_connector_metadata()
         assert isinstance(connector_metadata, LMCacheConnectorMetadata)
