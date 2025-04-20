@@ -390,7 +390,7 @@ class LMCacheConnectorV1Impl:
         if attn_metadata is None:
             logger.warning(
                 "In connector.start_load_kv, but the attn_metadata is None")
-            # return
+            return
 
         # HACK: getting chunk size to correctly calculate retrieve mask
         assert self.lmcache_engine is not None
