@@ -276,16 +276,14 @@ class NixlPipe:
                                                desc_indexes,
                                                self._remote_xfer_handlers,
                                                desc_indexes,
-                                               notify_msg=uuid_to_message(uid))
+                                               notif_msg=uuid_to_message(uid))
         t2 = time.perf_counter()
 
-        print("SENDING XFER")
         self._agent.transfer(handle)  #, uuid_to_message(uid))
 
         # NOTE: Potential optimization we don't immediately need to check
         # whether the transfer is done; Instead, we can check it before the
         # next time we allocate for write
-        print("CHECK XFER")
         while (status := self._agent.check_xfer_state(handle)) != "DONE":
             if status == "PROC":
                 time.sleep(0.001)  # Avoid busy waiting
@@ -296,10 +294,6 @@ class NixlPipe:
                     f"Failed to send data to remote peer: {self.peer_name}, "
                     f"status: {status}")
         t3 = time.perf_counter()
-
-        # print("CHECK XFER DONE")
-        # # self._agent.send_notif(self.peer_name, uuid_to_message(uid))
-        # print("NOTIF DONE")
 
         logger.debug(
             "Transfer %s completed in %.4f ms, creating the transfer: %.4f ms,"
