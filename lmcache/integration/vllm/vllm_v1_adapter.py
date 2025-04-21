@@ -632,7 +632,6 @@ class LMCacheConnectorV1Impl:
             # the consumer side only.
             if self.kv_role == "kv_producer":
                 continue
-
             req_meta = ReqMeta.from_request_tracker(
                 request_tracker,
                 self._block_size,
