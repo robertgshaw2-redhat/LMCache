@@ -278,6 +278,7 @@ class NixlPipe:
                                                desc_indexes,
                                                notif_msg=uuid_to_message(uid))
         t2 = time.perf_counter()
+
         self._agent.transfer(handle)  #, uuid_to_message(uid))
 
         # NOTE: Potential optimization we don't immediately need to check
