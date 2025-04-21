@@ -646,6 +646,7 @@ class LMCacheConnectorV1Impl:
         for request_id in scheduler_output.new_KV_req_ids_to_send:
             assert self.kv_role == "kv_producer"
             request_tracker = self._request_trackers[request_id]
+
             req_meta = ReqMeta.from_request_tracker(
                 request_tracker,
                 self._block_size,
