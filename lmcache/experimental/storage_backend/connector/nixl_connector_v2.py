@@ -275,14 +275,17 @@ class NixlPipe:
                                                self._local_xfer_handlers,
                                                desc_indexes,
                                                self._remote_xfer_handlers,
-                                               desc_indexes)
+                                               desc_indexes,
+                                               notify_msg=uuid_to_message(uid))
         t2 = time.perf_counter()
 
+        print("SENDING XFER")
         self._agent.transfer(handle)  #, uuid_to_message(uid))
 
         # NOTE: Potential optimization we don't immediately need to check
         # whether the transfer is done; Instead, we can check it before the
         # next time we allocate for write
+        print("CHECK XFER")
         while (status := self._agent.check_xfer_state(handle)) != "DONE":
             if status == "PROC":
                 time.sleep(0.001)  # Avoid busy waiting
@@ -294,7 +297,9 @@ class NixlPipe:
                     f"status: {status}")
         t3 = time.perf_counter()
 
-        self._agent.send_notif(self.peer_name, uuid_to_message(uid))
+        # print("CHECK XFER DONE")
+        # # self._agent.send_notif(self.peer_name, uuid_to_message(uid))
+        # print("NOTIF DONE")
 
         logger.debug(
             "Transfer %s completed in %.4f ms, creating the transfer: %.4f ms,"
@@ -485,11 +490,14 @@ class NixlChannel:
         num_received_object = 0
         offset = 0
         while num_received_object < len(keys):
+            print("WAIT READ")
             self._pipe.wait_read()
+            print("READ BUFFER")
             objs_read = self._pipe.read_buffer(metadatas[offset:])
 
             # Notify the observers
             start = time.perf_counter()
+            print("CALLING OBSERVER")
             for observer in self._observers:
                 observer(
                     keys=keys[offset:offset + len(objs_read)],
@@ -501,7 +509,9 @@ class NixlChannel:
                          1000 * (end - start))
 
             # Acknowledge the remote side that the transfer was processed
+            print("CALLING ACK RECV")
             self._pipe.ack_receive()
+            print("DONE ACK RECV")
 
             # Update the offset
             num_received_object += len(objs_read)
